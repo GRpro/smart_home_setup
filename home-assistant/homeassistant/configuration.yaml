@@ -1,0 +1,25 @@
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# ── HTTP / Reverse Proxy ───────────────────────────────────────────
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 172.16.0.0/12 # covers all default Docker bridge subnets
+    - 127.0.0.1
+    - ::1
+
+homeassistant:
+  # Must match your DuckDNS subdomain (used by Companion App)
+  external_url: "https://grpro.duckdns.org"
+
+# ── MQTT (shared ChirpStack Mosquitto broker via iot_net) ──────────
+mqtt:
+  broker: host.docker.internal
+  port: 1883
+  discovery: true # enables MQTT device auto-discovery
+
+# ── Includes ──────────────────────────────────────────────────────
+sensor: !include sensors.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml

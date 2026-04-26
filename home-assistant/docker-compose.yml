@@ -1,0 +1,77 @@
+version: "3"
+
+# ─────────────────────────────────────────────────────────────────
+#  Home Assistant Stack
+#  Connects to your existing ChirpStack Mosquitto broker via your 
+#  VPS public IP (or grpro.duckdns.org), as both stacks are on
+#  the same machine but not sharing a Docker network.
+#
+#  Setup order:
+#    1. cp .env.example .env && fill values
+#    2. docker compose up -d                   (pre-SSL)
+#    3. Obtain cert (see README)
+#    4. Swap nginx config to SSL version, restart nginx
+# ─────────────────────────────────────────────────────────────────
+
+services:
+
+  homeassistant:
+    image: homeassistant/home-assistant:stable
+    container_name: homeassistant
+    restart: unless-stopped
+    volumes:
+      - ./homeassistant:/config
+    networks:
+      - ha_internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - nginx
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8123"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  nginx:
+    image: nginx:alpine
+    container_name: ha_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certbot/www:/var/www/certbot:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+    networks:
+      - ha_internal
+    depends_on:
+      - homeassistant
+
+  duckdns:
+    image: linuxserver/duckdns
+    container_name: ha_duckdns
+    restart: unless-stopped
+    environment:
+      - SUBDOMAINS=${DUCKDNS_SUBDOMAIN}
+      - TOKEN=${DUCKDNS_TOKEN}
+      - LOG_FILE=false
+    networks:
+      - ha_internal
+
+  certbot:
+    image: certbot/certbot
+    container_name: ha_certbot
+    restart: unless-stopped
+    volumes:
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+    # Checks for renewal every 12 hours
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - ha_internal
+
+networks:
+  ha_internal:
+    driver: bridge

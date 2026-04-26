@@ -1,24 +1,18 @@
 # ─────────────────────────────────────────────────────────────────
-#  POST-SSL NGINX config  (Step 2 — use after cert is obtained)
-#
-#  Replace default.conf with this content:
-#    cp nginx/conf.d/default-ssl.conf nginx/conf.d/default.conf
-#  Then restart nginx:
-#    docker compose restart nginx
-#
-#  Substitute YOUR_SUBDOMAIN with your actual DuckDNS subdomain.
+#  POST-SSL NGINX template (NOT in conf.d — nginx only loads *.conf there).
+#  After cert issuance, setup_ssl.sh runs:
+#    sed "s/YOUR_SUBDOMAIN/<subdomain>/g" nginx/default-ssl.conf.template \\
+#        > nginx/conf.d/default.conf
 # ─────────────────────────────────────────────────────────────────
 
 server {
     listen 80;
     server_name YOUR_SUBDOMAIN.duckdns.org;
 
-    # ACME challenge (needed for auto-renewal by certbot)
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
     }
 
-    # Force HTTPS
     location / {
         return 301 https://$host$request_uri;
     }
@@ -31,12 +25,10 @@ server {
     ssl_certificate     /etc/letsencrypt/live/YOUR_SUBDOMAIN.duckdns.org/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/YOUR_SUBDOMAIN.duckdns.org/privkey.pem;
 
-    # Modern SSL settings
     ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_ciphers         HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
 
-    # ── Home Assistant UI ───────────────────────────────────────
     location / {
         proxy_pass         http://homeassistant:8123;
         proxy_set_header   Host               $host;
@@ -46,7 +38,6 @@ server {
         proxy_http_version 1.1;
     }
 
-    # ── WebSocket (required for real-time HA Companion App sync) ─
     location /api/websocket {
         proxy_pass         http://homeassistant:8123/api/websocket;
         proxy_set_header   Host               $host;

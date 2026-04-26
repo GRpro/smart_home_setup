@@ -43,6 +43,16 @@ echo "📂 Ensuring challenge directories exist..."
 mkdir -p certbot/www/.well-known/acme-challenge
 echo "test" > certbot/www/.well-known/acme-challenge/test.txt
 
+# Nginx must serve HTTP-01 only until certs exist. If default.conf was
+# replaced by an SSL config with missing certs (or unreplaced YOUR_SUBDOMAIN),
+# nginx crash-loops and Let's Encrypt sees a timeout — not a firewall issue.
+if [ ! -f nginx/conf.d/default-http.conf ]; then
+    echo "❌ Error: nginx/conf.d/default-http.conf missing (HTTP-only template)."
+    exit 1
+fi
+echo "📋 Resetting nginx/conf.d/default.conf from default-http.conf..."
+cp nginx/conf.d/default-http.conf nginx/conf.d/default.conf
+
 # 3. Start initial HTTP stack
 echo "👉 Starting NGINX in HTTP-only mode..."
 $DOCKER_CMD up -d nginx certbot duckdns
@@ -70,15 +80,14 @@ $DOCKER_CMD run --rm --entrypoint certbot certbot certonly \
     --agree-tos \
     --non-interactive
 
-# 6. Swap to SSL config
+# 6. Swap to SSL config (template lives outside conf.d so nginx never loads it pre-cert)
 echo "📝 Swapping NGINX configuration to SSL version..."
-if [ ! -f nginx/conf.d/default-ssl.conf ]; then
-    echo "❌ Error: nginx/conf.d/default-ssl.conf not found."
+if [ ! -f nginx/default-ssl.conf.template ]; then
+    echo "❌ Error: nginx/default-ssl.conf.template not found."
     exit 1
 fi
 
-# Replace YOUR_SUBDOMAIN in the template
-sed "s/YOUR_SUBDOMAIN/$SUBDOMAIN/g" nginx/conf.d/default-ssl.conf > nginx/conf.d/default.conf
+sed "s/YOUR_SUBDOMAIN/$SUBDOMAIN/g" nginx/default-ssl.conf.template > nginx/conf.d/default.conf
 
 # 7. Restart with full stack
 echo "🔄 Restarting NGINX in SSL mode..."

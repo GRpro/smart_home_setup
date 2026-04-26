@@ -56,6 +56,12 @@ chmod +x setup_ssl.sh
 
 Once finished, open **`https://grpro.duckdns.org`** to start Home Assistant onboarding!
 
+### Troubleshooting SSL
+
+**Let's Encrypt reports timeout / “likely firewall” but UFW is open**
+
+Check `docker ps`: if `ha_nginx` is **Restarting**, port 80 is not bound. Nginx loads **every** `*.conf` in `nginx/conf.d/`; a stray SSL template there (with missing certs) prevents startup. This repo keeps the SSL **template** as `nginx/default-ssl.conf.template` (outside `conf.d/`). Inspect logs with `docker logs ha_nginx`. **`setup_ssl.sh` resets `default.conf` from `default-http.conf` before requesting a certificate**; after a successful run it writes only `default.conf` with real paths. Re-run `./setup_ssl.sh` if nginx was stuck.
+
 ---
 
 ## Maintenance

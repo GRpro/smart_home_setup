@@ -26,7 +26,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
-      - nginx
+      - duckdns
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8123"]
       interval: 30s

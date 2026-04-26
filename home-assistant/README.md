@@ -13,7 +13,7 @@ Internet
     │ MQTT :1883 (connected via 'host.docker.internal' to ChirpStack/Mosquitto)
 ```
 
-This stack is pre-configured to reach your Mosquitto container using the special hostname `host.docker.internal`, assuming both stacks are running on the same VPS.
+This stack is pre-configured to reach your Mosquitto container using the special hostname `host.docker.internal`. This setup is robust and works even if Port 80 is blocked.
 
 ---
 
@@ -21,7 +21,7 @@ This stack is pre-configured to reach your Mosquitto container using the special
 
 - VPS with **Ubuntu 22.04+** / Debian 12+
 - **Docker + Docker Compose** installed
-- Ports **80**, **443**, **1883**, **1700 UDP** open in the VPS firewall
+- Ports **443**, **1883**, **1700 UDP** open in the VPS firewall (**Port 80 is NOT required**)
 - Your **ChirpStack stack already running**
 
 ---
@@ -38,7 +38,7 @@ nano .env   # fill in DUCKDNS_SUBDOMAIN (grpro), DUCKDNS_TOKEN, LE_EMAIL
 cp homeassistant/secrets.yaml.example homeassistant/secrets.yaml
 ```
 
-Update `homeassistant/configuration.yaml` — ensure the domain matches:
+Update `homeassistant/configuration.yaml` — ensure it matches your domain:
 
 ```yaml
 homeassistant:
@@ -49,9 +49,9 @@ mqtt:
   port: 1883
 ```
 
-### Step 2 — Automate SSL & Start (One command)
+### Step 2 — Automate SSL & Start
 
-I have provided a script to handle the initial certificate obtainment and NGINX configuration automatically.
+I have provided a script that handles SSL verification via **DNS** (using your DuckDNS token). This bypasses all firewall/Port 80 issues.
 
 ```bash
 chmod +x setup_ssl.sh
@@ -68,7 +68,7 @@ Once finished, open **`https://grpro.duckdns.org`** to start Home Assistant onbo
 `Device → Gateway → ChirpStack (decodes payload) → Mosquitto (port 1883) → Home Assistant (MQTT sensors)`
 
 ### Sensor configuration
-Check your device codec output in ChirpStack UI. Edit `homeassistant/sensors.yaml` to match. The `configuration.yaml` is already set to use `host.docker.internal`.
+The `configuration.yaml` is pre-configured to use `host.docker.internal`. To add sensors, edit `homeassistant/sensors.yaml` using the "Live Data" fields from your ChirpStack UI.
 
 ---
 

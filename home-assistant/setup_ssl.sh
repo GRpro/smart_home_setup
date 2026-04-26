@@ -47,7 +47,7 @@ sleep 5
 
 # 3. Obtain certificate
 echo "🔐 Requesting certificate from Let's Encrypt..."
-$DOCKER_CMD run --rm certbot certonly \
+$DOCKER_CMD run --rm --entrypoint certbot certbot certonly \
     --webroot -w /var/www/certbot \
     -d "$DOMAIN" \
     --email "$EMAIL" \

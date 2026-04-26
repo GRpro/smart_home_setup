@@ -16,7 +16,7 @@ version: "3"
 services:
 
   homeassistant:
-    image: homeassistant/home-assistant:stable
+    image: homeassistant/home-assistant:2024.4.3
     container_name: homeassistant
     restart: unless-stopped
     volumes:

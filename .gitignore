@@ -1,3 +1,7 @@
 # Secrets — never commit these
 .env
-configuration/mosquitto/passwd
+**/mosquitto/passwd
+
+# IDE / OS
+.idea/
+.DS_Store

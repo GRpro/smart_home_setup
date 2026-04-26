@@ -1,0 +1,53 @@
+# ChirpStack JSON integration → topic application/+/device/+/event/up
+# Tune value_template to your device codec "object" fields.
+
+- name: "LoRaWAN Temperature"
+  unique_id: lorawan_temperature
+  state_topic: "application/+/device/+/event/up"
+  value_template: "{{ value_json.object.temperature | default('unknown') }}"
+  unit_of_measurement: "°C"
+  device_class: temperature
+  state_class: measurement
+  icon: mdi:thermometer
+
+- name: "LoRaWAN Humidity"
+  unique_id: lorawan_humidity
+  state_topic: "application/+/device/+/event/up"
+  value_template: "{{ value_json.object.humidity | default('unknown') }}"
+  unit_of_measurement: "%"
+  device_class: humidity
+  state_class: measurement
+  icon: mdi:water-percent
+
+- name: "LoRaWAN Battery"
+  unique_id: lorawan_battery
+  state_topic: "application/+/device/+/event/up"
+  value_template: "{{ value_json.object.battery | default('unknown') }}"
+  unit_of_measurement: "V"
+  device_class: voltage
+  state_class: measurement
+  icon: mdi:battery
+
+- name: "LoRaWAN RSSI"
+  unique_id: lorawan_rssi
+  state_topic: "application/+/device/+/event/up"
+  value_template: "{{ value_json.rxInfo[0].rssi | default('unknown') }}"
+  unit_of_measurement: "dBm"
+  device_class: signal_strength
+  state_class: measurement
+  icon: mdi:signal
+
+- name: "LoRaWAN SNR"
+  unique_id: lorawan_snr
+  state_topic: "application/+/device/+/event/up"
+  value_template: "{{ value_json.rxInfo[0].snr | default('unknown') }}"
+  unit_of_measurement: "dB"
+  state_class: measurement
+  icon: mdi:sine-wave
+
+- name: "LoRaWAN Last Seen"
+  unique_id: lorawan_last_seen
+  state_topic: "application/+/device/+/event/up"
+  value_template: "{{ value_json.time | default('unknown') }}"
+  device_class: timestamp
+  icon: mdi:clock-outline

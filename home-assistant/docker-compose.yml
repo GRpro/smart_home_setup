@@ -1,17 +1,8 @@
 version: "3"
 
-# ─────────────────────────────────────────────────────────────────
-#  Home Assistant Stack
-#  Connects to your existing ChirpStack Mosquitto broker via your 
-#  VPS public IP (or grpro.duckdns.org), as both stacks are on
-#  the same machine but not sharing a Docker network.
-#
-#  Setup order:
-#    1. cp .env.example .env && fill values
-#    2. docker compose up -d                   (pre-SSL)
-#    3. Obtain cert (see README)
-#    4. Swap nginx config to SSL version, restart nginx
-# ─────────────────────────────────────────────────────────────────
+# Home Assistant + nginx + DuckDNS + Certbot. Mosquitto lives in the ChirpStack
+# compose on the same host; HA reaches it at host.docker.internal:1883.
+# See README.md for setup order.
 
 services:
 

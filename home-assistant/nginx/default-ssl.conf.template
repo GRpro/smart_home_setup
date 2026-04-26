@@ -1,9 +1,4 @@
-# ─────────────────────────────────────────────────────────────────
-#  POST-SSL NGINX template (NOT in conf.d — nginx only loads *.conf there).
-#  After cert issuance, setup_ssl.sh runs:
-#    sed "s/YOUR_SUBDOMAIN/<subdomain>/g" nginx/default-ssl.conf.template \\
-#        > nginx/conf.d/default.conf
-# ─────────────────────────────────────────────────────────────────
+# TLS + proxy template. Keep outside conf.d. Rendered by setup_ssl.sh → conf.d/default.conf
 
 server {
     listen 80;

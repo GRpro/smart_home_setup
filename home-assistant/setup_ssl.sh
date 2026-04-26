@@ -8,7 +8,7 @@ set -e
 
 # 1. Load context
 if [ ! -f .env ]; then
-    echo "❌ Error: .env file not found. Please run 'cp .env.example .env' and fill it first."
+    echo "[ERROR] .env not found. Run: cp .env.example .env and fill it."
     exit 1
 fi
 
@@ -22,7 +22,7 @@ SUBDOMAIN=$(get_env_var DUCKDNS_SUBDOMAIN)
 DOMAIN="${SUBDOMAIN}.duckdns.org"
 
 if [ -z "$EMAIL" ] || [ -z "$SUBDOMAIN" ]; then
-    echo "❌ Error: Could not find LE_EMAIL or DUCKDNS_SUBDOMAIN in .env"
+    echo "[ERROR] LE_EMAIL or DUCKDNS_SUBDOMAIN missing in .env"
     exit 1
 fi
 
@@ -32,14 +32,14 @@ if docker compose version >/dev/null 2>&1; then
 elif docker-compose version >/dev/null 2>&1; then
     DOCKER_CMD="docker-compose"
 else
-    echo "❌ Error: Neither 'docker compose' nor 'docker-compose' found."
+    echo "[ERROR] Neither 'docker compose' nor 'docker-compose' found."
     exit 1
 fi
 
-echo "🚀 Starting SSL setup for $DOMAIN (Email: $EMAIL)..."
+echo "[ssl] Starting for $DOMAIN (email: $EMAIL)"
 
 # 2. Pre-flight checks
-echo "📂 Ensuring challenge directories exist..."
+echo "[ssl] Preparing ACME webroot..."
 mkdir -p certbot/www/.well-known/acme-challenge
 echo "test" > certbot/www/.well-known/acme-challenge/test.txt
 
@@ -47,51 +47,51 @@ echo "test" > certbot/www/.well-known/acme-challenge/test.txt
 # replaced by an SSL config with missing certs (or unreplaced YOUR_SUBDOMAIN),
 # nginx crash-loops and Let's Encrypt sees a timeout — not a firewall issue.
 if [ ! -f nginx/conf.d/default-http.conf ]; then
-    echo "❌ Error: nginx/conf.d/default-http.conf missing (HTTP-only template)."
+    echo "[ERROR] nginx/conf.d/default-http.conf missing."
     exit 1
 fi
-echo "📋 Resetting nginx/conf.d/default.conf from default-http.conf..."
+echo "[ssl] Resetting nginx/conf.d/default.conf from default-http.conf"
 cp nginx/conf.d/default-http.conf nginx/conf.d/default.conf
 
 # 3. Start initial HTTP stack
-echo "👉 Starting NGINX in HTTP-only mode..."
+echo "[ssl] Starting nginx, certbot, duckdns..."
 $DOCKER_CMD up -d nginx certbot duckdns
 
-echo "⏳ Waiting for NGINX/DNS to stabilize (15s)..."
+echo "[ssl] Waiting 15s for nginx/DNS..."
 sleep 15
 
 # 4. Diagnostic check
-echo "🔍 Verifying Port 80 is open..."
+echo "[ssl] Checking HTTP access to ACME test file..."
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://$DOMAIN/.well-known/acme-challenge/test.txt" || echo "failed")
 
 if [ "$HTTP_CODE" != "200" ]; then
-    echo "⚠️ Warning: Port 80 still seems blocked (Status: $HTTP_CODE)."
-    echo "   Continuing anyway but it might fail..."
+    echo "[WARN] Expected HTTP 200 from ACME test URL; got: $HTTP_CODE (continuing)"
 else
-    echo "✅ Success! Port 80 is open and NGINX is reachable."
+    echo "[OK] Port 80 reachable for ACME path"
 fi
 
-# 5. Obtain certificate
-echo "🔐 Requesting certificate from Let's Encrypt..."
+# 5. Obtain certificate (--keep-until-expiring: re-run is OK if cert already valid)
+echo "[ssl] Requesting Let's Encrypt certificate (if needed)..."
 $DOCKER_CMD run --rm --entrypoint certbot certbot certonly \
     --webroot -w /var/www/certbot \
     -d "$DOMAIN" \
     --email "$EMAIL" \
     --agree-tos \
-    --non-interactive
+    --non-interactive \
+    --keep-until-expiring
 
-# 6. Swap to SSL config (template lives outside conf.d so nginx never loads it pre-cert)
-echo "📝 Swapping NGINX configuration to SSL version..."
+# 6. Swap to SSL config (template outside conf.d — nginx only loads *.conf there)
+echo "[ssl] Writing TLS nginx config from template..."
 if [ ! -f nginx/default-ssl.conf.template ]; then
-    echo "❌ Error: nginx/default-ssl.conf.template not found."
+    echo "[ERROR] nginx/default-ssl.conf.template not found."
     exit 1
 fi
 
 sed "s/YOUR_SUBDOMAIN/$SUBDOMAIN/g" nginx/default-ssl.conf.template > nginx/conf.d/default.conf
 
 # 7. Restart with full stack
-echo "🔄 Restarting NGINX in SSL mode..."
+echo "[ssl] Applying stack and restarting nginx..."
 $DOCKER_CMD up -d
 $DOCKER_CMD restart nginx
 
-echo "✅ Success! Your stack is now running at https://$DOMAIN"
+echo "[OK] HTTPS: https://$DOMAIN"

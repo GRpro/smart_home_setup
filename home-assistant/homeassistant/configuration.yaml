@@ -10,14 +10,14 @@ http:
     - ::1
 
 homeassistant:
-  # Must match your DuckDNS subdomain (used by Companion App)
-  external_url: "https://grpro.duckdns.org"
+  # Public URL — set ha_external_url in secrets.yaml (same host as DuckDNS).
+  external_url: !secret ha_external_url
 
-# ── MQTT (shared ChirpStack Mosquitto broker via iot_net) ──────────
+# MQTT broker: HA 2024+ — add via Settings → Devices & services → MQTT
+# (host.docker.internal:1883 for ChirpStack Mosquitto on this host).
+# YAML below attaches sensors to that integration after it exists.
 mqtt:
-  broker: host.docker.internal
-  port: 1883
-  discovery: true # enables MQTT device auto-discovery
+  sensor: !include mqtt_sensors.yaml
 
 # ── Includes ──────────────────────────────────────────────────────
 sensor: !include sensors.yaml

@@ -12,7 +12,7 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
-# Function to extract variables safely (strips comments and whitespace)
+# Function to extract variables safely
 get_env_var() {
     grep "^$1=" .env | cut -d '=' -f2- | sed 's/[[:space:]]*#.*$//' | xargs
 }
@@ -38,14 +38,32 @@ fi
 
 echo "🚀 Starting SSL setup for $DOMAIN (Email: $EMAIL)..."
 
-# 2. Start initial HTTP stack
+# 2. Pre-flight checks
+echo "📂 Ensuring challenge directories exist..."
+mkdir -p certbot/www/.well-known/acme-challenge
+echo "test" > certbot/www/.well-known/acme-challenge/test.txt
+
+# 3. Start initial HTTP stack
 echo "👉 Starting NGINX in HTTP-only mode..."
 $DOCKER_CMD up -d nginx certbot duckdns
 
-echo "⏳ Waiting for NGINX to wake up..."
-sleep 5
+echo "⏳ Waiting for NGINX/DNS to stabilize (15s)..."
+sleep 15
 
-# 3. Obtain certificate
+# 4. Diagnostic check
+echo "🔍 Verifying NGINX is serving the challenge folder..."
+# Try to curl the test file via the PUBLIC domain name
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://$DOMAIN/.well-known/acme-challenge/test.txt" || echo "failed")
+
+if [ "$HTTP_CODE" != "200" ]; then
+    echo "⚠️ Warning: Could not reach the test file at http://$DOMAIN/.well-known/acme-challenge/test.txt (Status: $HTTP_CODE)"
+    echo "   Ensure Port 80 is open in your firewall and $DOMAIN points to this VPS."
+    echo "   Continuing anyway..."
+else
+    echo "✅ Success! NGINX is correctly serving the challenge folder."
+fi
+
+# 5. Obtain certificate
 echo "🔐 Requesting certificate from Let's Encrypt..."
 $DOCKER_CMD run --rm --entrypoint certbot certbot certonly \
     --webroot -w /var/www/certbot \
@@ -54,7 +72,7 @@ $DOCKER_CMD run --rm --entrypoint certbot certbot certonly \
     --agree-tos \
     --non-interactive
 
-# 4. Swap to SSL config
+# 6. Swap to SSL config
 echo "📝 Swapping NGINX configuration to SSL version..."
 if [ ! -f nginx/conf.d/default-ssl.conf ]; then
     echo "❌ Error: nginx/conf.d/default-ssl.conf not found."
@@ -64,10 +82,9 @@ fi
 # Replace YOUR_SUBDOMAIN in the template
 sed "s/YOUR_SUBDOMAIN/$SUBDOMAIN/g" nginx/conf.d/default-ssl.conf > nginx/conf.d/default.conf
 
-# 5. Restart with full stack
+# 7. Restart with full stack
 echo "🔄 Restarting NGINX in SSL mode..."
 $DOCKER_CMD up -d
 $DOCKER_CMD restart nginx
 
 echo "✅ Success! Your stack is now running at https://$DOMAIN"
-echo "   (It may take a minute for the HA container to finish starting up)"

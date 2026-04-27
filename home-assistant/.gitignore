@@ -7,7 +7,9 @@ certbot/
 
 # Home Assistant generated files
 homeassistant/.storage/
+homeassistant/.HA_VERSION
 homeassistant/home-assistant.log
+homeassistant/home-assistant.log.*
 homeassistant/home-assistant_v2.db
 homeassistant/home-assistant_v2.db-shm
 homeassistant/home-assistant_v2.db-wal

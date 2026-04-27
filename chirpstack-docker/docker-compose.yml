@@ -58,8 +58,17 @@ services:
     restart: unless-stopped
     ports:
       - 1883:1883
+      - 9001:9001
     volumes: 
       - ./configuration/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  mqttx-web:
+    image: emqx/mqttx-web:latest
+    restart: unless-stopped
+    ports:
+      - 8081:80
+    depends_on:
+      - mosquitto
 
 volumes:
   postgresqldata:

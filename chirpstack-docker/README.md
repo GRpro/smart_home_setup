@@ -24,6 +24,7 @@ Please note that:
   Please see the region configuration files in the `configuration/chirpstack` for a list
   of topic prefixes (e.g. eu868, us915_0, au915, as923_2, ...).
 * The protobuf marshaler is configured.
+* Mosquitto exposes MQTT over TCP (`1883`) and WebSockets (`9001`).
 
 This setup also comes with a ChirpStack Gateway Bridge instance which is configured to the
 eu868 topic prefix. You can connect your UDP packet-forwarder based gateway to port 1700.
@@ -71,3 +72,21 @@ You should be able to access the UI by opening http://localhost:8090 in your bro
 
 **Note:** It is recommended to use the [gRPC](https://www.chirpstack.io/docs/chirpstack/api/grpc.html)
 interface over the [REST](https://www.chirpstack.io/docs/chirpstack/api/rest.html) interface.
+
+## MQTT topic browser (web)
+
+This stack includes `mqttx-web` (web MQTT client) on:
+
+- `http://<host>:8081`
+
+Connection settings in MQTTX Web:
+
+- Host: `<host>`
+- Port: `9001`
+- Protocol: `ws://` (WebSocket, non-TLS)
+- Username / password: empty (matches current `allow_anonymous true`)
+
+You can subscribe to:
+
+- `application/#` (device events from ChirpStack integration)
+- `+/gateway/#` (gateway bridge topics across region prefixes)

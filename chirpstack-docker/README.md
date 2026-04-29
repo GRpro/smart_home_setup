@@ -64,13 +64,13 @@ $ docker-compose up
 
 ### Configure MQTT (before start)
 
-Anonymous MQTT is off (`configuration/mosquitto/mosquitto.conf`). Create **`passwd` first**, then align **`.env`** with the password you chose for **`chirpstack_devices`** (ChirpStack + Gateway Bridge read credentials from `.env` only).
+Anonymous MQTT is off (`configuration/mosquitto/mosquitto.conf`). Create **`passwd` first**, then align **`.env`** with the password you chose for **`chirpstack_devices`**. Compose passes those values into the NS and Gateway Bridge (see below).
 
 **1. Create three broker users** (`configuration/mosquitto/acl`):
 
 | User | Used by |
 |------|---------|
-| `chirpstack_devices` | ChirpStack NS + Gateway Bridge (via `.env`) |
+| `chirpstack_devices` | ChirpStack NS (integration + per-region gateway MQTT in `region_*.toml`), Gateway Bridge |
 | `external_devices` | Gateways / devices on the public internet |
 | `mqtt_admin` | Home Assistant MQTT, MQTTX Web, CLI debugging |
 
@@ -111,6 +111,17 @@ mosquitto_sub -h 127.0.0.1 -p 1883 -u mqtt_admin -P '<mqtt_admin_password>' -t '
 ```
 
 Optional: restrict **`1883/tcp`** in your cloud firewall to known gateway IPs.
+
+#### How credentials are wired (important)
+
+- **ChirpStack Network Server** — `[integration.mqtt]` in `configuration/chirpstack/chirpstack.toml` uses `$MQTT_BROKER_USERNAME` / `$MQTT_BROKER_PASSWORD`. Compose sets those from **`MQTT_CHIRPSTACK_*`** in `.env`.
+- **Per-region gateway MQTT** — each `configuration/chirpstack/region_*.toml` has `[regions.gateway.backend.mqtt]` with the same **`$MQTT_BROKER_USERNAME`** / **`$MQTT_BROKER_PASSWORD`**. With `allow_anonymous false`, empty credentials here cause NS crash loops (**CONNACK not authorized**). Do not strip these lines when editing regions.
+- **ChirpStack Gateway Bridge** — the bridge **does not** expand `$VAR` inside its TOML (unlike the NS). User/password are supplied only via compose env: **`INTEGRATION__MQTT__AUTH__GENERIC__USERNAME`** and **`INTEGRATION__MQTT__AUTH__GENERIC__PASSWORD`** (Viper style: config path dots → double underscores). See `docker-compose.yml` service `chirpstack-gateway-bridge-eu868`.
+
+#### Troubleshooting
+
+- **`mosquitto` fails to start**, `bind: address already in use` on **1883**: another MQTT broker on the host is using the port (common: **`snap` Mosquitto**). Stop or disable it (`snap stop mosquitto`) or change this compose file’s **host** port mapping for Mosquitto.
+- **Gateway Bridge logs** `not Authorized` / **NS logs** `CONNACK return code` on gateway backend: wrong or missing MQTT user/password for that component (bridge env vars vs. `$MQTT_BROKER_*` in NS/region files vs. `passwd` / `.env`).
 
 After all the components have been initialized and started, you should be able
 to open http://localhost:8080/ in your browser.

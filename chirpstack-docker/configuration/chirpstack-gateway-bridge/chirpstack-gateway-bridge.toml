@@ -1,13 +1,8 @@
 # See https://www.chirpstack.io/gateway-bridge/install/config/ for a full
 # configuration example and documentation.
 
-[integration]
-marshaler="json"
-
 [integration.mqtt.auth.generic]
 servers=["tcp://mosquitto:1883"]
-# MQTT user/password: set INTEGRATION__MQTT__AUTH__GENERIC__USERNAME / __PASSWORD in
-# docker-compose (from MQTT_CHIRPSTACK_*). This binary does not expand $VAR inside TOML.
 
 [integration.mqtt]
 event_topic_template="eu868/gateway/{{ .GatewayID }}/event/{{ .EventType }}"

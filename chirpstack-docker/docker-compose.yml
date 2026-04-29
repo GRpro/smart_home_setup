@@ -25,7 +25,6 @@ services:
     image: chirpstack/chirpstack-gateway-bridge:4
     restart: unless-stopped
     environment:
-      # Viper env keys: dots in config path → double underscores (see ChirpStack Gateway Bridge docs).
       - INTEGRATION__MQTT__AUTH__GENERIC__USERNAME=${MQTT_CHIRPSTACK_USERNAME}
       - INTEGRATION__MQTT__AUTH__GENERIC__PASSWORD=${MQTT_CHIRPSTACK_PASSWORD}
     ports:

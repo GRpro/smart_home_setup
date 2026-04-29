@@ -1,5 +1,7 @@
-# ChirpStack JSON integration → topic application/+/device/+/event/up
-# Tune value_template to your device codec "object" fields.
+# ChirpStack application uplinks → topic application/+/device/+/event/up
+# Default NS integration MQTT is protobuf; these value_json templates need JSON.
+# Set json=true under [integration.mqtt] in chirpstack-docker/.../chirpstack.toml
+# or replace with sensors that decode protobuf. Tune value_template to codec "object".
 
 # Direct ESP8266 (JSON on single topic)
 # Topic: home/sensors/aht10_esp8266/measurements
@@ -85,37 +87,6 @@
 - name: "LoRaWAN Last Seen"
   unique_id: lorawan_last_seen
   state_topic: "application/+/device/+/event/up"
-  value_template: "{{ value_json.time | default('unknown') }}"
-  device_class: timestamp
-  icon: mdi:clock-outline
-
-# ChirpStack Gateway Bridge stats (minimal set)
-# Topic prefix `eu868` must match gateway bridge event_topic_template.
-# If you have multiple gateways, replace `+` with a fixed gateway ID.
-- name: "Gateway RX packets"
-  unique_id: gateway_rx_packets
-  state_topic: "eu868/gateway/+/event/stats"
-  value_template: "{{ value_json.rxPacketsReceived | default('unknown') }}"
-  state_class: measurement
-  icon: mdi:radio-tower
-
-- name: "Gateway RX packets OK"
-  unique_id: gateway_rx_packets_ok
-  state_topic: "eu868/gateway/+/event/stats"
-  value_template: "{{ value_json.rxPacketsReceivedOk | default('unknown') }}"
-  state_class: measurement
-  icon: mdi:check-network
-
-- name: "Gateway TX packets emitted"
-  unique_id: gateway_tx_packets_emitted
-  state_topic: "eu868/gateway/+/event/stats"
-  value_template: "{{ value_json.txPacketsEmitted | default('unknown') }}"
-  state_class: measurement
-  icon: mdi:upload-network
-
-- name: "Gateway stats last seen"
-  unique_id: gateway_stats_last_seen
-  state_topic: "eu868/gateway/+/event/stats"
   value_template: "{{ value_json.time | default('unknown') }}"
   device_class: timestamp
   icon: mdi:clock-outline

@@ -23,7 +23,7 @@ Please note that:
 * You must prefix the MQTT topic with the region
   Please see the region configuration files in the `configuration/chirpstack` for a list
   of topic prefixes (e.g. eu868, us915_0, au915, as923_2, ...).
-* Gateway Bridge marshaler is configured in `configuration/chirpstack-gateway-bridge/chirpstack-gateway-bridge.toml` (this repo uses `json`).
+* Gateway Bridge marshaler is configured in `configuration/chirpstack-gateway-bridge/chirpstack-gateway-bridge.toml`.
 * Mosquitto exposes MQTT over TCP (`1883`) and WebSockets (`9001`).
 
 This setup also comes with a ChirpStack Gateway Bridge instance which is configured to the

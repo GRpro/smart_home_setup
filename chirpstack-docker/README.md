@@ -23,7 +23,7 @@ Please note that:
 * You must prefix the MQTT topic with the region
   Please see the region configuration files in the `configuration/chirpstack` for a list
   of topic prefixes (e.g. eu868, us915_0, au915, as923_2, ...).
-* The protobuf marshaler is configured.
+* Gateway Bridge marshaler is configured in `configuration/chirpstack-gateway-bridge/chirpstack-gateway-bridge.toml` (this repo uses `json`).
 * Mosquitto exposes MQTT over TCP (`1883`) and WebSockets (`9001`).
 
 This setup also comes with a ChirpStack Gateway Bridge instance which is configured to the
@@ -62,6 +62,56 @@ To start the ChirpStack simply run:
 $ docker-compose up
 ```
 
+### Configure MQTT (before start)
+
+Anonymous MQTT is off (`configuration/mosquitto/mosquitto.conf`). Create **`passwd` first**, then align **`.env`** with the password you chose for **`chirpstack_devices`** (ChirpStack + Gateway Bridge read credentials from `.env` only).
+
+**1. Create three broker users** (`configuration/mosquitto/acl`):
+
+| User | Used by |
+|------|---------|
+| `chirpstack_devices` | ChirpStack NS + Gateway Bridge (via `.env`) |
+| `external_devices` | Gateways / devices on the public internet |
+| `mqtt_admin` | Home Assistant MQTT, MQTTX Web, CLI debugging |
+
+```bash
+docker run --rm -it \
+  -v "$(pwd)/configuration/mosquitto:/mosquitto/config" \
+  eclipse-mosquitto:2 \
+  sh -lc '
+    mosquitto_passwd -c /mosquitto/config/passwd chirpstack_devices &&
+    mosquitto_passwd /mosquitto/config/passwd external_devices &&
+    mosquitto_passwd /mosquitto/config/passwd mqtt_admin
+  '
+```
+
+**2. Copy passwords into `.env`** — only these variables are read by Compose (`docker-compose.yml`):
+
+```bash
+cp .env.example .env
+```
+
+Set `MQTT_CHIRPSTACK_PASSWORD` (and username if you changed it) to **exactly** the password you entered for **`chirpstack_devices`** in step 1.  
+Configure **`external_devices`** and **`mqtt_admin`** on your gateways / Home Assistant / MQTTX manually — they are **not** in `.env`.
+
+**3. Start the stack**
+
+```bash
+docker-compose up -d
+```
+
+**4. Quick check**
+
+```bash
+# anonymous → should fail
+mosquitto_sub -h 127.0.0.1 -p 1883 -t 'application/#' -C 1
+
+# mqtt_admin → should work
+mosquitto_sub -h 127.0.0.1 -p 1883 -u mqtt_admin -P '<mqtt_admin_password>' -t 'application/#' -C 1
+```
+
+Optional: restrict **`1883/tcp`** in your cloud firewall to known gateway IPs.
+
 After all the components have been initialized and started, you should be able
 to open http://localhost:8080/ in your browser.
 
@@ -84,7 +134,7 @@ Connection settings in MQTTX Web:
 - Host: `<host>`
 - Port: `9001`
 - Protocol: `ws://` (WebSocket, non-TLS)
-- Username / password: empty (matches current `allow_anonymous true`)
+- Username / password: use `mqtt_admin` credentials from `passwd`
 
 You can subscribe to:
 

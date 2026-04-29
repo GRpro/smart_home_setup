@@ -103,4 +103,6 @@
 
   [integration.mqtt]
     server="tcp://$MQTT_BROKER_HOST:1883/"
+    username="$MQTT_BROKER_USERNAME"
+    password="$MQTT_BROKER_PASSWORD"
     json=true

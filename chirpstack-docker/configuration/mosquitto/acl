@@ -1,0 +1,10 @@
+user chirpstack_devices
+topic readwrite application/#
+topic readwrite +/gateway/#
+
+user external_devices
+topic readwrite +/gateway/#
+topic write home/sensors/#
+
+user mqtt_admin
+topic readwrite #

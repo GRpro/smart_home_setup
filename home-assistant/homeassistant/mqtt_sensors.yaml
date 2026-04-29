@@ -1,6 +1,43 @@
 # ChirpStack JSON integration → topic application/+/device/+/event/up
 # Tune value_template to your device codec "object" fields.
 
+# Direct ESP8266 (JSON on single topic)
+# Topic: home/sensors/aht10_esp8266/measurements
+# Payload: {"t": temp °C, "h": hum %, "v": battery V, "p": ...}
+- name: "AHT10 Temperature"
+  unique_id: aht10_esp8266_temperature
+  state_topic: "home/sensors/aht10_esp8266/measurements"
+  value_template: "{{ value_json.t | default('unknown') }}"
+  unit_of_measurement: "°C"
+  device_class: temperature
+  state_class: measurement
+  icon: mdi:thermometer
+
+- name: "AHT10 Humidity"
+  unique_id: aht10_esp8266_humidity
+  state_topic: "home/sensors/aht10_esp8266/measurements"
+  value_template: "{{ value_json.h | default('unknown') }}"
+  unit_of_measurement: "%"
+  device_class: humidity
+  state_class: measurement
+  icon: mdi:water-percent
+
+- name: "AHT10 Battery"
+  unique_id: aht10_esp8266_battery
+  state_topic: "home/sensors/aht10_esp8266/measurements"
+  value_template: "{{ value_json.v | default('unknown') }}"
+  unit_of_measurement: "V"
+  device_class: voltage
+  state_class: measurement
+  icon: mdi:battery
+
+- name: "AHT10 p"
+  unique_id: aht10_esp8266_p
+  state_topic: "home/sensors/aht10_esp8266/measurements"
+  value_template: "{{ value_json.p | default('unknown') }}"
+  state_class: measurement
+  icon: mdi:counter
+
 - name: "LoRaWAN Temperature"
   unique_id: lorawan_temperature
   state_topic: "application/+/device/+/event/up"

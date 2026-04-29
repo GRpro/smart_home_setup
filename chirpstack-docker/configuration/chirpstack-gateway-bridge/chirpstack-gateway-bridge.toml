@@ -6,8 +6,8 @@ marshaler="json"
 
 [integration.mqtt.auth.generic]
 servers=["tcp://mosquitto:1883"]
-username=""
-password=""
+username="$MQTT_GATEWAY_BRIDGE_USERNAME"
+password="$MQTT_GATEWAY_BRIDGE_PASSWORD"
 
 [integration.mqtt]
 event_topic_template="eu868/gateway/{{ .GatewayID }}/event/{{ .EventType }}"

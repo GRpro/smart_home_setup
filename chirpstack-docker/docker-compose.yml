@@ -14,6 +14,8 @@ services:
       - redis
     environment:
       - MQTT_BROKER_HOST=mosquitto
+      - MQTT_BROKER_USERNAME=${MQTT_CHIRPSTACK_USERNAME}
+      - MQTT_BROKER_PASSWORD=${MQTT_CHIRPSTACK_PASSWORD}
       - REDIS_HOST=redis
       - POSTGRESQL_HOST=postgres
     ports:
@@ -22,6 +24,9 @@ services:
   chirpstack-gateway-bridge-eu868:
     image: chirpstack/chirpstack-gateway-bridge:4
     restart: unless-stopped
+    environment:
+      - MQTT_GATEWAY_BRIDGE_USERNAME=${MQTT_CHIRPSTACK_USERNAME}
+      - MQTT_GATEWAY_BRIDGE_PASSWORD=${MQTT_CHIRPSTACK_PASSWORD}
     ports:
       - 1700:1700/udp
     volumes:
@@ -61,6 +66,8 @@ services:
       - 9001:9001
     volumes: 
       - ./configuration/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./configuration/mosquitto/acl:/mosquitto/config/acl
+      - ./configuration/mosquitto/passwd:/mosquitto/config/passwd
 
   mqttx-web:
     image: emqx/mqttx-web:latest

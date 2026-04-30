@@ -14,7 +14,7 @@ homeassistant:
   external_url: !secret ha_external_url
 
 # MQTT broker: HA 2024+ — add via Settings → Devices & services → MQTT
-# (host.docker.internal:1883 for ChirpStack Mosquitto on this host).
+# (mosquitto:1883 when HA shares the `iot` Docker network with ChirpStack).
 # YAML below attaches sensors to that integration after it exists.
 mqtt:
   sensor: !include mqtt_sensors.yaml

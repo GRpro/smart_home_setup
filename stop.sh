@@ -1,24 +1,7 @@
-#!/bin/bash
-
+#!/usr/bin/env bash
 set -euo pipefail
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CHIRPSTACK_DIR="$SCRIPT_DIR/chirpstack-docker"
-HOME_ASSISTANT_DIR="$SCRIPT_DIR/home-assistant"
-
-if docker compose version >/dev/null 2>&1; then
-  COMPOSE_CMD=(docker compose)
-elif docker-compose version >/dev/null 2>&1; then
-  COMPOSE_CMD=(docker-compose)
-else
-  echo "[ERROR] Neither 'docker compose' nor 'docker-compose' found."
-  exit 1
-fi
-
-echo "[stop] Stopping home-assistant stack..."
-"${COMPOSE_CMD[@]}" -f "$HOME_ASSISTANT_DIR/docker-compose.yml" stop
-
-echo "[stop] Stopping chirpstack-docker stack..."
-"${COMPOSE_CMD[@]}" -f "$CHIRPSTACK_DIR/docker-compose.yml" stop
-
-echo "[OK] Both stacks are stopped."
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+args=(docker compose --project-name smart_home)
+[[ -f "$root/chirpstack-docker/.env" ]] && args+=(--env-file "$root/chirpstack-docker/.env")
+[[ -f "$root/home-assistant/.env" ]] && args+=(--env-file "$root/home-assistant/.env")
+exec "${args[@]}" -f "$root/chirpstack-docker/docker-compose.yml" -f "$root/home-assistant/docker-compose.yml" stop

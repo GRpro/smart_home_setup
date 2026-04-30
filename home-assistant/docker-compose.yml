@@ -1,7 +1,7 @@
 version: "3"
 
-# Home Assistant + nginx + DuckDNS + Certbot. Mosquitto lives in the ChirpStack
-# compose on the same host; HA reaches it at host.docker.internal:1883.
+# Home Assistant + nginx + DuckDNS + Certbot. Mosquitto runs in the merged ChirpStack
+# compose on the shared `iot` network; HA reaches it at mosquitto:1883.
 # See README.md for setup order.
 
 services:
@@ -13,9 +13,7 @@ services:
     volumes:
       - ./homeassistant:/config
     networks:
-      - ha_internal
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - iot
     depends_on:
       - duckdns
     healthcheck:
@@ -36,7 +34,7 @@ services:
       - ./certbot/www:/var/www/certbot:ro
       - ./certbot/conf:/etc/letsencrypt:ro
     networks:
-      - ha_internal
+      - iot
     depends_on:
       - homeassistant
 
@@ -49,7 +47,7 @@ services:
       - TOKEN=${DUCKDNS_TOKEN}
       - LOG_FILE=false
     networks:
-      - ha_internal
+      - iot
 
   certbot:
     image: certbot/certbot
@@ -61,8 +59,9 @@ services:
     # Checks for renewal every 12 hours
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     networks:
-      - ha_internal
+      - iot
 
 networks:
-  ha_internal:
+  iot:
+    name: iot
     driver: bridge

@@ -1,6 +1,6 @@
 # Home Assistant (VPS + nginx + Let’s Encrypt)
 
-Dockerized Home Assistant behind **nginx** on **443**. Certificates come from **Let’s Encrypt** (HTTP-01). On the same host, [ChirpStack](../chirpstack-docker/) can publish to **Mosquitto**; HA reaches the broker at **`host.docker.internal:1883`**.
+Dockerized Home Assistant behind **nginx** on **443**. Certificates come from **Let’s Encrypt** (HTTP-01). When deployed with the repo root [`start.sh`](../start.sh) (merged Compose + **`iot`** network), [ChirpStack](../chirpstack-docker/) **Mosquitto** is reachable at **`mosquitto:1883`** from the HA container.
 
 ---
 
@@ -11,7 +11,7 @@ Dockerized Home Assistant behind **nginx** on **443**. Certificates come from **
 | **Home Assistant** | `https://<subdomain>.duckdns.org/` |
 | **ChirpStack UI** | `https://<subdomain>.duckdns.org/chirpstack/` |
 
-ChirpStack must be running on the host; nginx proxies `/chirpstack/` to `http://host.docker.internal:8080`.
+ChirpStack runs in the merged stack; nginx proxies `/chirpstack/` to `http://chirpstack:8080` on the **`iot`** network.
 
 ---
 
@@ -27,6 +27,8 @@ ChirpStack must be running on the host; nginx proxies `/chirpstack/` to `http://
 
 **Requirements:** Docker + Compose; ports **80** and **443** open to the internet (80 is required for Let’s Encrypt).
 
+Prepare env files for **both** stacks (ChirpStack credentials in [`chirpstack-docker/.env`](../chirpstack-docker/.env.example), DuckDNS in `home-assistant/.env`). Then start the **merged** project from the repo root so HA, nginx, Mosquitto, and ChirpStack share the **`iot`** network:
+
 ```bash
 cd home-assistant
 cp .env.example .env
@@ -37,7 +39,10 @@ cp homeassistant/secrets.yaml.example homeassistant/secrets.yaml
 ```
 
 ```bash
-docker compose up -d
+# From repository root:
+./start.sh
+
+cd home-assistant
 chmod +x setup_ssl.sh
 ./setup_ssl.sh
 ```
@@ -55,7 +60,7 @@ Open **`https://<subdomain>.duckdns.org/`** and finish HA onboarding.
 Broker is configured in the UI, not YAML.
 
 1. **Settings → Devices & services → Add integration → MQTT**
-2. Broker: **`host.docker.internal`**, port **`1883`**
+2. Broker: **`mosquitto`** (hostname on Docker network **`iot`**), port **`1883`**
 3. User/password: e.g. **`mqtt_admin`** from Mosquitto — see [chirpstack-docker README](../chirpstack-docker/README.md) for creating `passwd`.
 
 Reload MQTT or restart HA. LoRaWAN sensors live in `homeassistant/mqtt_sensors.yaml`; enable ChirpStack’s MQTT integration per application.
@@ -74,14 +79,13 @@ Reload MQTT or restart HA. LoRaWAN sensors live in `homeassistant/mqtt_sensors.y
 - The **`certbot`** service runs `certbot renew` on a schedule. After a renewal, reload nginx:
 
 ```bash
-cd home-assistant
-docker compose exec nginx nginx -s reload
+docker exec ha_nginx nginx -s reload
 ```
 
-- To renew on demand:  
-  `docker compose run --rm --entrypoint certbot certbot renew --webroot -w /var/www/certbot`  
-  then `docker compose exec nginx nginx -s reload` again.
-- **Redo from scratch** (wrong domain, broken `certbot/conf`): stop stack, clear `certbot/conf/`, `docker compose up -d`, run `./setup_ssl.sh` again. For forced re-issue before normal renewal, see [Let’s Encrypt rate limits](https://letsencrypt.org/docs/rate-limits/) before using `--force-renewal`.
+- To renew on demand (from the **repository root**, same compose project as [`start.sh`](../start.sh)):  
+  `docker compose --project-name smart_home --env-file chirpstack-docker/.env --env-file home-assistant/.env -f chirpstack-docker/docker-compose.yml -f home-assistant/docker-compose.yml run --rm --entrypoint certbot certbot renew --webroot -w /var/www/certbot`  
+  then `docker exec ha_nginx nginx -s reload` again.
+- **Redo from scratch** (wrong domain, broken `certbot/conf`): stop stack (`./stop.sh` from repo root), clear `certbot/conf/`, `./start.sh`, run `home-assistant/setup_ssl.sh` again. For forced re-issue before normal renewal, see [Let’s Encrypt rate limits](https://letsencrypt.org/docs/rate-limits/) before using `--force-renewal`.
 
 ---
 
@@ -91,6 +95,7 @@ docker compose exec nginx nginx -s reload
 |---------|--------|
 | Let’s Encrypt **timeout** | `docker ps`: **`ha_nginx`** stuck **Restarting** → nothing on **80**. `docker logs ha_nginx`. Do not put `default-ssl.conf.template` in `conf.d/` as a live `*.conf`. Re-run `./setup_ssl.sh`. |
 | **HTTP** / ACME path fails | DNS points to this VPS; **80** open; nginx **Up**. |
+| **`/chirpstack/` → 404** (plain text / Home Assistant–style headers) | TLS `default.conf` was generated **without** the ChirpStack `location` blocks. From `home-assistant/`, run **`./setup_ssl.sh`** again so it re-renders from **`nginx/default-ssl.conf.template`**, then reload nginx (see **Let’s Encrypt maintenance** below). Open `nginx/conf.d/default.conf` and confirm **`location /chirpstack/`** and **`proxy_pass http://chirpstack:8080`**. The merged stack must be running so **nginx** and **chirpstack** share the **`iot`** network. |
 
 ---
 

@@ -5,6 +5,8 @@ default_config:
 http:
   use_x_forwarded_for: true
   trusted_proxies:
+    - 172.22.0.11 # current ha_nginx container IP on iot network
+    - 172.22.0.0/16 # current iot subnet
     - 172.16.0.0/12 # covers all default Docker bridge subnets
     - 127.0.0.1
     - ::1

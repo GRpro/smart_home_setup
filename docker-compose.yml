@@ -1,0 +1,3 @@
+include:
+  - path: chirpstack-docker/docker-compose.yml
+  - path: home-assistant/docker-compose.yml

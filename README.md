@@ -13,7 +13,7 @@ ChirpStack and Home Assistant are deployed together as **one Docker Compose proj
 
 From the repository root:
 
-- **`./start.sh`** — `docker compose --project-name smart_home` with both compose files and both `.env` files (when present): `chirpstack-docker/.env` then `home-assistant/.env` (later keys override earlier ones).
+- **`./start.sh`** — `docker compose --project-name smart_home -f docker-compose.yml` (root file **`include:`**s [`chirpstack-docker/docker-compose.yml`](chirpstack-docker/docker-compose.yml) + [`home-assistant/docker-compose.yml`](home-assistant/docker-compose.yml) so bind-mount paths resolve correctly). Uses both `.env` files when present (`chirpstack-docker/.env` then `home-assistant/.env`; later keys override earlier ones).
 - **`./stop.sh`** — stops that same project without removing volumes.
 
 Requires **Docker Compose V2** (`docker compose`, e.g. v2.20+ for multiple `--env-file`).
@@ -23,8 +23,9 @@ Requires **Docker Compose V2** (`docker compose`, e.g. v2.20+ for multiple `--en
 If you previously started each stack with its own `docker compose -f ...` (default project names), stop and remove those old projects once so you do not run duplicate containers:
 
 ```bash
-docker compose -f chirpstack-docker/docker-compose.yml down
-docker compose -f home-assistant/docker-compose.yml down
+docker compose --project-name smart_home -f docker-compose.yml down
 ```
 
 Then use `./start.sh`. Shared network **`iot`** is created by Compose when the merged project starts.
+
+**Nginx + ChirpStack at `/chirpstack/`:** the active TLS file `home-assistant/nginx/conf.d/default.conf` is generated and **gitignored** so pulls do not clobber it. After updating the repo, from `home-assistant/` run **`./setup_ssl.sh --apply-template`** (certs must already exist) to refresh that file from `default-ssl.conf.template`.

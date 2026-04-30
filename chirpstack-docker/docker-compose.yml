@@ -97,5 +97,8 @@ networks:
     driver: bridge
 
 volumes:
+  # Explicit names so switching Compose project (e.g. merged `smart_home`) keeps the same DB/cache data.
   postgresqldata:
+    name: chirpstack-docker_postgresqldata
   redisdata:
+    name: chirpstack-docker_redisdata

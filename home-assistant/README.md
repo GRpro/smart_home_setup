@@ -47,7 +47,11 @@ chmod +x setup_ssl.sh
 ./setup_ssl.sh
 ```
 
-`setup_ssl.sh` installs an HTTP-only nginx config first, obtains the cert, then enables TLS from `nginx/default-ssl.conf.template`. Re-running is safe (`--keep-until-expiring`).
+`setup_ssl.sh` uses the **merged** compose project (`smart_home`, same as [`../start.sh`](../start.sh)), installs an HTTP-only nginx config first, obtains the cert, then writes TLS from `nginx/default-ssl.conf.template` to **`nginx/conf.d/default.conf`** (that file is **not** in git so `git pull` never overwrites your live TLS config).
+
+Re-running the full script is safe (`--keep-until-expiring`).
+
+**After `git pull`** (certs already on disk): from `home-assistant/` run **`./setup_ssl.sh --apply-template`** to re-render `default.conf` from the updated template and reload nginx (no new Let’s Encrypt call).
 
 Open **`https://<subdomain>.duckdns.org/`** and finish HA onboarding.
 
@@ -83,7 +87,7 @@ docker exec ha_nginx nginx -s reload
 ```
 
 - To renew on demand (from the **repository root**, same compose project as [`start.sh`](../start.sh)):  
-  `docker compose --project-name smart_home --env-file chirpstack-docker/.env --env-file home-assistant/.env -f chirpstack-docker/docker-compose.yml -f home-assistant/docker-compose.yml run --rm --entrypoint certbot certbot renew --webroot -w /var/www/certbot`  
+  `docker compose --project-name smart_home --env-file chirpstack-docker/.env --env-file home-assistant/.env -f docker-compose.yml run --rm --entrypoint certbot certbot renew --webroot -w /var/www/certbot`  
   then `docker exec ha_nginx nginx -s reload` again.
 - **Redo from scratch** (wrong domain, broken `certbot/conf`): stop stack (`./stop.sh` from repo root), clear `certbot/conf/`, `./start.sh`, run `home-assistant/setup_ssl.sh` again. For forced re-issue before normal renewal, see [Let’s Encrypt rate limits](https://letsencrypt.org/docs/rate-limits/) before using `--force-renewal`.
 
@@ -95,7 +99,7 @@ docker exec ha_nginx nginx -s reload
 |---------|--------|
 | Let’s Encrypt **timeout** | `docker ps`: **`ha_nginx`** stuck **Restarting** → nothing on **80**. `docker logs ha_nginx`. Do not put `default-ssl.conf.template` in `conf.d/` as a live `*.conf`. Re-run `./setup_ssl.sh`. |
 | **HTTP** / ACME path fails | DNS points to this VPS; **80** open; nginx **Up**. |
-| **`/chirpstack/` → 404** (plain text / Home Assistant–style headers) | TLS `default.conf` was generated **without** the ChirpStack `location` blocks. From `home-assistant/`, run **`./setup_ssl.sh`** again so it re-renders from **`nginx/default-ssl.conf.template`**, then reload nginx (see **Let’s Encrypt maintenance** below). Open `nginx/conf.d/default.conf` and confirm **`location /chirpstack/`** and **`proxy_pass http://chirpstack:8080`**. The merged stack must be running so **nginx** and **chirpstack** share the **`iot`** network. |
+| **`/chirpstack/` → 404** or empty UI | Ensure **`./start.sh`** is used (shared **`iot`** network). Re-render TLS: `cd home-assistant && ./setup_ssl.sh --apply-template` (or full **`./setup_ssl.sh`** if you have no certs yet). In `default.conf` you should see ChirpStack `location` blocks and **`proxy_pass` via `$chirp_upstream` → `chirpstack:8080`. |
 
 ---
 

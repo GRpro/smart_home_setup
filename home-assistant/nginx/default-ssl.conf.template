@@ -24,14 +24,18 @@ server {
     ssl_ciphers         HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
 
+    # Docker embedded DNS — chirpstack resolves after containers (re)start
+    resolver 127.0.0.11 valid=10s ipv6=off;
+
     # ChirpStack UI/API exposed under /chirpstack/.
     location = /chirpstack {
         return 301 /chirpstack/;
     }
 
     location /chirpstack/ {
+        set $chirp_upstream chirpstack;
         rewrite ^/chirpstack/(.*)$ /$1 break;
-        proxy_pass         http://chirpstack:8080;
+        proxy_pass         http://$chirp_upstream:8080;
         proxy_set_header   Host               $host;
         proxy_set_header   X-Real-IP          $remote_addr;
         proxy_set_header   X-Forwarded-For    $proxy_add_x_forwarded_for;
@@ -45,7 +49,8 @@ server {
     # endpoints under /api.<Service>/... . Route these to ChirpStack so
     # /chirpstack/ can work behind the same domain.
     location /static/ {
-        proxy_pass         http://chirpstack:8080;
+        set $chirp_upstream chirpstack;
+        proxy_pass         http://$chirp_upstream:8080;
         proxy_set_header   Host               $host;
         proxy_set_header   X-Real-IP          $remote_addr;
         proxy_set_header   X-Forwarded-For    $proxy_add_x_forwarded_for;
@@ -54,7 +59,8 @@ server {
     }
 
     location = /icon.png {
-        proxy_pass         http://chirpstack:8080;
+        set $chirp_upstream chirpstack;
+        proxy_pass         http://$chirp_upstream:8080;
         proxy_set_header   Host               $host;
         proxy_set_header   X-Real-IP          $remote_addr;
         proxy_set_header   X-Forwarded-For    $proxy_add_x_forwarded_for;
@@ -63,7 +69,8 @@ server {
     }
 
     location ~ ^/api\..+ {
-        proxy_pass         http://chirpstack:8080;
+        set $chirp_upstream chirpstack;
+        proxy_pass         http://$chirp_upstream:8080;
         proxy_set_header   Host               $host;
         proxy_set_header   X-Real-IP          $remote_addr;
         proxy_set_header   X-Forwarded-For    $proxy_add_x_forwarded_for;

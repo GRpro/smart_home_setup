@@ -1,0 +1,270 @@
+# Reference config for the "Home Power Station" Lovelace dashboard
+# (applied on the server under .storage/lovelace.home_power_station).
+# Requires: Deye Cloud integration + sunsynk-power-flow-card frontend.
+
+title: Home Power Station
+views:
+  - title: Power Flow
+    path: power-flow
+    icon: mdi:transmission-tower
+    type: panel
+    cards:
+      - type: custom:sunsynk-power-flow-card
+        cardstyle: lite
+        title: Home Power Station
+        title_colour: grey
+        title_size: 24px
+        show_solar: true
+        show_battery: true
+        show_grid: true
+        decimal_places: 1
+        decimal_places_energy: 1
+        dynamic_line_width: true
+        large_font: true
+        wide: true
+        inverter:
+          model: deye
+          modern: true
+          colour: grey
+          autarky: power
+          auto_scale: true
+          three_phase: false
+        solar:
+          mppts: 3
+          show_daily: true
+          auto_scale: true
+          dynamic_colour: true
+          animation_speed: 8
+          pv1_name: PV1
+          pv2_name: PV2
+          pv3_name: PV3
+        battery:
+          show_daily: true
+          auto_scale: true
+          dynamic_colour: true
+          linear_gradient: true
+          animate: true
+          invert_power: false
+          show_remaining_energy: false
+          shutdown_soc: 20
+          animation_speed: 6
+        load:
+          show_daily: true
+          show_aux: false
+          auto_scale: true
+          dynamic_colour: true
+          essential_name: Home
+          animation_speed: 8
+        grid:
+          show_daily_buy: true
+          show_daily_sell: true
+          show_nonessential: false
+          auto_scale: true
+          invert_grid: false
+          animation_speed: 8
+        entities:
+          battery_soc_184: sensor.deye_soc
+          battery_power_190: sensor.deye_battery_power
+          battery_voltage_183: sensor.deye_battery_voltage
+          battery_current_191: sensor.deye_battery_current
+          battery_temp_182: sensor.deye_temperature_battery
+          day_battery_charge_70: sensor.deye_daily_charging_energy
+          day_battery_discharge_71: sensor.deye_daily_discharging_energy
+          essential_power: sensor.deye_total_consumption_power
+          day_load_energy_84: sensor.deye_daily_consumption
+          grid_power_169: sensor.deye_total_grid_power
+          grid_ct_power_172: sensor.deye_total_grid_power
+          day_grid_import_76: sensor.deye_daily_energy_purchased
+          day_grid_export_77: sensor.deye_daily_grid_feed_in
+          grid_voltage: sensor.deye_grid_voltage_l1_l2
+          inverter_voltage_154: sensor.deye_grid_voltage_l1_l2
+          load_frequency_192: sensor.deye_grid_frequency
+          inverter_power_175: sensor.deye_inverter_output_power_l1_l2
+          pv_total: sensor.deye_total_dc_input_power
+          pv1_power_186: sensor.deye_dc_power_pv1
+          pv2_power_187: sensor.deye_dc_power_pv2
+          pv3_power_188: sensor.deye_dc_power_pv3
+          day_pv_energy_108: sensor.deye_pv_daily_power_generation_active
+          radiator_temp_91: sensor.deye_ac_temperature
+          dc_transformer_temp_90: sensor.deye_dc_temperature
+          use_timer_248: switch.deye_maintain_battery_level
+          prog1_time: time.deye_tou1_time
+          prog2_time: time.deye_tou2_time
+          prog3_time: time.deye_tou3_time
+          prog4_time: time.deye_tou4_time
+          prog5_time: time.deye_tou5_time
+          prog6_time: time.deye_tou6_time
+          prog1_capacity: number.deye_tou1_soc
+          prog2_capacity: number.deye_tou2_soc
+          prog3_capacity: number.deye_tou3_soc
+          prog4_capacity: number.deye_tou4_soc
+          prog5_capacity: number.deye_tou5_soc
+          prog6_capacity: number.deye_tou6_soc
+
+  - title: Battery
+    path: battery
+    icon: mdi:battery-arrow-down
+    type: sections
+    max_columns: 2
+    sections:
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Battery energy used (kWh / day)
+            heading_style: title
+          - type: statistics-graph
+            title: From battery (discharge)
+            entities:
+              - entity: sensor.deye_total_discharge_energy
+                name: Battery → home
+            stat_types:
+              - change
+            chart_type: bar
+            period: day
+            days_to_show: 14
+          - type: statistics-graph
+            title: Battery vs home vs grid
+            entities:
+              - entity: sensor.deye_total_discharge_energy
+                name: From battery
+              - entity: sensor.deye_daily_consumption
+                name: Home used
+              - entity: sensor.deye_daily_energy_purchased
+                name: From grid
+              - entity: sensor.deye_total_charge_energy
+                name: To battery
+            stat_types:
+              - change
+            chart_type: bar
+            period: day
+            days_to_show: 14
+      - type: grid
+        cards:
+          - type: heading
+            heading: Today
+            heading_style: title
+          - type: tile
+            entity: sensor.deye_daily_discharging_energy
+            name: Used from battery today
+            icon: mdi:battery-arrow-down
+          - type: tile
+            entity: sensor.deye_daily_charging_energy
+            name: Charged into battery today
+            icon: mdi:battery-arrow-up
+          - type: tile
+            entity: sensor.deye_soc
+            name: Battery SOC
+          - type: tile
+            entity: sensor.deye_battery_power
+            name: Battery power now
+      - type: grid
+        cards:
+          - type: heading
+            heading: Live power (incl. off-grid)
+            heading_style: title
+          - type: history-graph
+            title: Last 24h — battery & grid power
+            hours_to_show: 24
+            entities:
+              - entity: sensor.deye_battery_power
+                name: Battery W
+              - entity: sensor.deye_total_grid_power
+                name: Grid W
+              - entity: sensor.deye_total_consumption_power
+                name: Home W
+          - type: markdown
+            content: >
+              When **Grid W ≈ 0** and the battery is discharging, the home is
+              running from the battery. Daily bars use Deye discharge energy
+              (kWh). See also **Energy** in the sidebar for longer trends.
+
+  - title: Overview
+    path: overview
+    icon: mdi:view-dashboard
+    type: sections
+    max_columns: 3
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Now
+            heading_style: title
+          - type: tile
+            entity: sensor.deye_station_generation_power
+            name: Solar
+            icon: mdi:solar-power
+          - type: tile
+            entity: sensor.deye_station_consumption_power
+            name: Home
+            icon: mdi:home-lightning-bolt
+          - type: tile
+            entity: sensor.deye_station_wire_power
+            name: Grid
+            icon: mdi:transmission-tower
+          - type: tile
+            entity: sensor.deye_station_battery_power
+            name: Battery
+            icon: mdi:battery-charging
+          - type: gauge
+            entity: sensor.deye_station_battery_soc
+            name: Battery SOC
+            min: 0
+            max: 100
+            needle: true
+            severity:
+              green: 50
+              yellow: 20
+              red: 0
+      - type: grid
+        cards:
+          - type: heading
+            heading: Today
+            heading_style: title
+          - type: tile
+            entity: sensor.deye_pv_daily_power_generation_active
+            name: Solar produced
+          - type: tile
+            entity: sensor.deye_daily_consumption
+            name: Home used
+          - type: tile
+            entity: sensor.deye_daily_energy_purchased
+            name: Grid import
+          - type: tile
+            entity: sensor.deye_daily_grid_feed_in
+            name: Grid export
+          - type: tile
+            entity: sensor.deye_daily_charging_energy
+            name: Battery charged
+          - type: tile
+            entity: sensor.deye_daily_discharging_energy
+            name: Battery discharged
+      - type: grid
+        cards:
+          - type: heading
+            heading: Inverter
+            heading_style: title
+          - type: tile
+            entity: sensor.deye_total_dc_input_power
+            name: PV total
+          - type: tile
+            entity: sensor.deye_dc_power_pv1
+            name: PV1
+          - type: tile
+            entity: sensor.deye_dc_power_pv2
+            name: PV2
+          - type: tile
+            entity: sensor.deye_dc_power_pv3
+            name: PV3
+          - type: tile
+            entity: sensor.deye_ac_temperature
+            name: AC temp
+          - type: tile
+            entity: sensor.deye_dc_temperature
+            name: DC temp
+          - type: tile
+            entity: sensor.deye_temperature_battery
+            name: Battery temp
+          - type: tile
+            entity: sensor.deye_station_last_update_time
+            name: Last update

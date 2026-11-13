@@ -1,15 +1,8 @@
 # Loads default set of integrations. Do not remove.
 default_config:
 
-# ── HTTP / Reverse Proxy ───────────────────────────────────────────
-http:
-  use_x_forwarded_for: true
-  trusted_proxies:
-    - 172.22.0.11 # current ha_nginx container IP on iot network
-    - 172.22.0.0/16 # current iot subnet
-    - 172.16.0.0/12 # covers all default Docker bridge subnets
-    - 127.0.0.1
-    - ::1
+# HTTP / reverse proxy (use_x_forwarded_for, trusted_proxies) is managed in the UI:
+# Settings → System → Network. Do not put an http: block here on HA 2026.11+.
 
 homeassistant:
   # Public URL — set ha_external_url in secrets.yaml (same host as DuckDNS).

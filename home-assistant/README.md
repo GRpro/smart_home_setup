@@ -59,6 +59,24 @@ Open **`https://<subdomain>.duckdns.org/`** and finish HA onboarding.
 
 ---
 
+## HACS (Home Assistant Community Store)
+
+HACS is a custom integration ([download docs](https://hacs.xyz/docs/use/download/download/)). It is **not** committed to git (`custom_components/` is gitignored).
+
+With the stack running (`./start.sh` from repo root):
+
+```bash
+cd home-assistant
+chmod +x install_hacs.sh
+./install_hacs.sh
+```
+
+The script runs the official `get.hacs.xyz` installer inside the **`homeassistant`** container and restarts it.
+
+Then in the UI: **Settings → Devices & services → Add integration → HACS**. First setup needs a **GitHub** account (device-code / OAuth). After that you can install frontend cards and integrations from HACS.
+
+---
+
 ## MQTT (Home Assistant 2024+)
 
 Broker is configured in the UI, not YAML.

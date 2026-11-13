@@ -59,21 +59,13 @@ Open **`https://<subdomain>.duckdns.org/`** and finish HA onboarding.
 
 ---
 
-## HACS (Home Assistant Community Store)
+## Community add-ons (Marketplace / HACS)
 
-HACS is a custom integration ([download docs](https://hacs.xyz/docs/use/download/download/)). It is **not** committed to git (`custom_components/` is gitignored).
+**Home Assistant 2026.11+** (this stack uses **2026.11.1**) includes a native **[Marketplace](https://www.home-assistant.io/integrations/marketplace)**. Use that instead of the old HACS custom integration:
 
-With the stack running (`./start.sh` from repo root):
+**Settings → Devices & services → Marketplace**
 
-```bash
-cd home-assistant
-chmod +x install_hacs.sh
-./install_hacs.sh
-```
-
-The script runs the official `get.hacs.xyz` installer inside the **`homeassistant`** container and restarts it.
-
-Then in the UI: **Settings → Devices & services → Add integration → HACS**. First setup needs a **GitHub** account (device-code / OAuth). After that you can install frontend cards and integrations from HACS.
+The classic HACS installer refuses to install on 2026.11+. [`install_hacs.sh`](install_hacs.sh) detects that and exits with a pointer to Marketplace. On older HA versions only, the same script runs `get.hacs.xyz` inside the **`homeassistant`** container (`custom_components/` stays gitignored).
 
 ---
 

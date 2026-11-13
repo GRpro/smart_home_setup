@@ -2,8 +2,12 @@
 # Download HACS into the Home Assistant config (Docker Container install).
 # Docs: https://hacs.xyz/docs/use/download/download/
 #
-# After this script: restart HA, then Settings → Devices & services → Add
-# integration → HACS (GitHub account required for first setup).
+# Note: Home Assistant 2026.11+ ships a native Marketplace and the official
+# installer refuses to install HACS. Use Settings → Devices & services →
+# Marketplace instead on those versions.
+#
+# After a successful install on older HA: restart, then Settings → Devices &
+# services → Add integration → HACS (GitHub account required for first setup).
 
 set -euo pipefail
 
@@ -12,6 +16,15 @@ CONTAINER="${HACS_HA_CONTAINER:-homeassistant}"
 if ! docker inspect "$CONTAINER" >/dev/null 2>&1; then
   echo "[ERROR] Container '$CONTAINER' not found. Start the stack (./start.sh) first."
   exit 1
+fi
+
+ha_version="$(docker exec "$CONTAINER" cat /config/.HA_VERSION 2>/dev/null || true)"
+if [[ "$ha_version" =~ ^2026\.(1[1-9]|[2-9][0-9]) ]] || [[ "$ha_version" =~ ^202[7-9]\. ]]; then
+  echo "[INFO] Home Assistant $ha_version includes the native Marketplace."
+  echo "       HACS custom integration is not supported on 2026.11+."
+  echo "       Use: Settings → Devices & services → Marketplace"
+  echo "       Docs: https://www.home-assistant.io/integrations/marketplace"
+  exit 0
 fi
 
 if docker exec "$CONTAINER" test -f /config/custom_components/hacs/manifest.json 2>/dev/null; then
